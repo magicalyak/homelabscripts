@@ -1,0 +1,29 @@
+---
+- name: Shutdown oVirt RHV Hosts
+  hosts: rhvhosts
+  remote_user: root
+  tasks:
+    - name: Set global maintenance mode
+      command: hosted-engine --set-maintenance --mode=global
+
+    - name: Shut down engine
+      command: hosted-engine --vm-shutdown
+
+    - name: wait for engine to stop
+      local_action:
+        module: wait_for
+          host=engine.gamull.com
+          state=stopped
+          delay=30
+          timeout=600
+
+    - name: shutdown hosts
+      command: systemctl poweroff
+
+    - name: wait for hosts to shutdown
+      local_action:
+        module: wait_for
+          host={{ inventory_hostname }}
+          state=stopped
+          delay=30
+          timeout=600

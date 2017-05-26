@@ -1,0 +1,27 @@
+---
+- hosts: ovirt
+  remote_user: root
+
+  tasks:
+    - block:
+      - name: get password from vault file
+        include_vars: ovirt_password.yml
+
+      - name: Obtain SSO token with username/password credentials
+        ovirt_auth:
+          url: https://engine.gamull.com/ovirt-engine/api
+          username: admin@internal
+          password: "{{ ovirt_password  }}"
+          insecure: True
+
+      - name: Get VMs
+        ovirt_vms:
+          auth: "{{ ovirt_auth }}"
+          state: absent
+          name: ansible
+
+      always:
+        - name:
+          ovirt_auth:
+            state: absent
+            ovirt_auth: "{{ ovirt_auth }}"

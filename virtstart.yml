@@ -1,0 +1,37 @@
+---
+- name: START RHV4 POWER ON
+  gather_facts: false
+  hosts: dracrhvhosts
+  tasks:
+    - name: Start RHV4 hosts
+      raw: racadm serveraction powerup
+      failed_when: "'ERROR' in result.stdout or 'COMMAND PROCESSING FAILED' in result.stdout or 'error' in result.stdout or result.rc != 0"
+      ignore_errors: true
+    - debug: var=result
+
+- name: START RHV4 HYPERVISORS
+  hosts: rhvhosts
+  gather_facts: false
+  tasks:
+
+    - name: waiting for server to come up
+      local_action:
+        module: wait_for
+          host={{ inventory_hostname }}
+          state=started
+          delay=30
+          timeout=600
+
+    - name: Disable maintenance mode
+      command: hosted-engine --set-maintenance --mode=none
+      async: 1
+      poll: 0
+      ignore_errors: true
+
+    - name: waiting for engine to come up
+      local_action:
+        module: wait_for
+          host=engine.gamull.com
+          state=started
+          delay=30
+          timeout=600

@@ -1,0 +1,35 @@
+---
+- name: START VMWARE HOST POWER ON
+  gather_facts: false
+  hosts: ilohosts
+  tasks:
+    - name: Start ESXi hosts
+      raw: POWER ON
+      failed_when: "'ERROR' in result.stdout or 'COMMAND PROCESSING FAILED' in result.stdout or 'error' in result.stdout or result.rc != 0"
+      ignore_errors: true
+    - debug: var=result
+
+- name: START VCENTER
+  hosts: esxhosts
+  gather_facts: false
+  tasks:
+  
+    - name: waiting for server to come up
+      local_action: 
+        module: wait_for
+          host={{ inventory_hostname }}
+          state=started
+          delay=30
+          timeout=600
+
+    - name: Power On Vcenter
+      raw: vim-cmd vmsvc/power.on 2
+      ignore_errors: true
+
+    - name: waiting for vcenter to come up
+      local_action: 
+        module: wait_for 
+          host=vcenter.gamull.com 
+          state=started
+          delay=30 
+          timeout=600
